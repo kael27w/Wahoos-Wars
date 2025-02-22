@@ -23,6 +23,8 @@ export type app_event = {
   location: string;
 };
 
+import { Animated, Easing } from "react-native";
+
 const EventScreen = () => {
   const [events, setEvents] = useState<app_event[]>([]);
   const [countdown, setCountdown] = useState("00:00:00");
@@ -31,6 +33,12 @@ const EventScreen = () => {
   const [selectedEvent, setSelectedEvent] = useState<app_event | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  
+  // Animated scale value for countdown
+  const scaleAnim = useState(new Animated.Value(1))[0];
+
+  // Animated position value for MoveDown arrow
+  const arrowAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
     const futureDate = new Date(Date.now() + 3600000);
@@ -50,17 +58,51 @@ const EventScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAddEvent = () => {
-    if (newTitle && newDescription) {
-      setEvents([
-        ...events,
-        { title: newTitle, description: newDescription, time: "", location: "" },
-      ]);
-      setNewTitle("");
-      setNewDescription("");
-      setAddEventModal(false);
-    }
-  };
+//   Countdown animation effect
+  useEffect(() => {
+    const animateCountdown = () => {
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.1,
+          duration: 700,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+      ]).start(() => animateCountdown());
+    };
+
+    animateCountdown();
+  }, []);
+
+  // Arrow bounce animation effect
+//   useEffect(() => {
+//     const animateArrow = () => {
+//       Animated.loop(
+//         Animated.sequence([
+//           Animated.timing(arrowAnim, {
+//             toValue: 10, // Moves down by 10px
+//             duration: 600,
+//             easing: Easing.inOut(Easing.ease),
+//             useNativeDriver: true,
+//           }),
+//           Animated.timing(arrowAnim, {
+//             toValue: 0, // Moves back up
+//             duration: 600,
+//             easing: Easing.inOut(Easing.ease),
+//             useNativeDriver: true,
+//           }),
+//         ])
+//       ).start();
+//     };
+
+//     animateArrow();
+//   }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -82,16 +124,19 @@ const EventScreen = () => {
                 className="w-56 h-12 bg-white bg-opacity-80 rounded-full items-center justify-center overflow-hidden"
                 style={{ width: 200, height: 50 }}
               >
-                <Text className="text-4xl font-black text-red-600">
+                <Animated.Text
+                  className="text-4xl font-black text-red-600"
+                  style={{ transform: [{ scale: scaleAnim }] }}
+                >
                   {countdown}
-                </Text>
+                </Animated.Text>
               </View>
               
-              {/* Scroll indicator */}
+              {/* Scroll indicator with animation */}
               <View className="absolute bottom-[20rem] left-0 right-0 items-center">
-                <View className="self-center">
-                  <MoveDown size={32} color="black"/>
-                </View>
+                <Animated.View style={{ transform: [{ translateY: arrowAnim }] }}>
+                  <MoveDown size={32} color="black" />
+                </Animated.View>
               </View>
             </View>
           ) : (
@@ -136,55 +181,6 @@ const EventScreen = () => {
           )
         }
       />
-
-      {/* Event Details Modal */}
-      <Modal visible={modalVisible} animationType="fade" transparent>
-        <View className="flex-1 bg-black bg-opacity-50 justify-center items-center">
-          <View className="w-4/5 bg-white p-5 rounded-lg items-center shadow-lg">
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              className="absolute top-4 right-4"
-            >
-              <X size={28} />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold mb-4">
-              {selectedEvent?.title}
-            </Text>
-            <Text className="text-base text-center mb-6">
-              {selectedEvent?.description}
-            </Text>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Add Event Modal */}
-      <Modal visible={addEventModal} animationType="slide" transparent>
-        <View className="flex-1 bg-black bg-opacity-50 justify-center items-center">
-          <View className="w-4/5 bg-white p-5 rounded-lg items-center shadow-lg">
-            <TouchableOpacity
-              onPress={() => setAddEventModal(false)}
-              className="absolute top-4 right-4"
-            >
-              <X size={28} />
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold mb-4">Add New Event</Text>
-            <TextInput
-              placeholder="Event Title"
-              value={newTitle}
-              onChangeText={setNewTitle}
-              className="w-full border-b border-gray-200 mb-4 py-2 text-base"
-            />
-            <TextInput
-              placeholder="Event Description"
-              value={newDescription}
-              onChangeText={setNewDescription}
-              className="w-full border-b border-gray-200 mb-4 py-2 text-base"
-              multiline
-            />
-            <Button title="Add Event" onPress={handleAddEvent} />
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
