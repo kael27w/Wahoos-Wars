@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import MapView, { Marker, Circle } from "react-native-maps";
 import { intervalToDuration } from "date-fns";
-import { Plus, MoveDown } from "lucide-react-native";
+import { Plus, MoveDown, Info } from "lucide-react-native";
 
 const { height, width } = Dimensions.get("window");
 
@@ -175,9 +175,19 @@ const EventScreen = () => {
           item.key === "upcoming" ? (
             <View className="h-full items-center" style={{ height }}>
               {/* Countdown Section */}
-              <Text className="text-2xl font-bold text-gray-800 mt-[10rem]">
+			  <View className="flex-row items-center justify-center mt-[10rem]">
+              <Text className="text-2xl font-bold text-gray-800">
                 Upcoming Event ???
               </Text>
+			  <TouchableOpacity
+					onPress={() =>
+					Alert.alert("Upcoming Event", "The next event is revealed soon! Check in to the current one.")
+					}
+					className="ml-1 rounded-full"
+				>
+					<Info size={20} color="black" />
+				</TouchableOpacity>
+				</View>
               <View className="w-full h-12 bg-white bg-opacity-80 rounded-full items-center justify-center">
                 <Animated.Text
                   className="text-4xl font-black text-red-600"
@@ -190,7 +200,7 @@ const EventScreen = () => {
               {/* Map Section Below Countdown */}
               {events.length > 1 && (
 				<>
-                <View className="w-[95%] h-64 mt-[2rem] rounded-lg overflow-hidden">
+                <View className="w-[95%] h-64 mt-[2rem] rounded-lg overflow-hidden border-4 border-gray-200 shadow-lg">
                   <MapView
                     style={{ width: "100%", height: "100%" }}
                     initialRegion={{
@@ -253,7 +263,7 @@ const EventScreen = () => {
 					onPress={handleCheckIn}
 					>
 					<Text className="text-white text-center text-lg font-bold p-4">
-						Check in to current event:{"\n"}{events[0].title}
+						Check in to current event:{"\n"}<Text className="text-yellow-300">{events[0].title}</Text>
 					</Text>
 				</TouchableOpacity>
 
