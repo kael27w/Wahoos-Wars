@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 import { intervalToDuration } from "date-fns";
 import { Plus, X, MoveDown } from "lucide-react-native";
 
-const { height, width } = Dimensions.get("window"); // Get screen dimensions
+const { height, width } = Dimensions.get("window");
 
 export type app_event = {
   title: string;
@@ -34,30 +34,66 @@ const EventScreen = () => {
   const [newDescription, setNewDescription] = useState("");
   const scrollY = new Animated.Value(0);
 
-  const ripplePosition = useRef(new Animated.Value(0)).current;
+  // Animation values
+  const pulseAnim = new Animated.Value(1);
+  const bounceAnim = new Animated.Value(0);
+
+  // Setup animations
+  useEffect(() => {
+    // Pulse animation
+    const pulseSequence = Animated.sequence([
+      Animated.timing(pulseAnim, {
+        toValue: 1.1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]);
+
+    // Bounce animation
+    const bounceSequence = Animated.sequence([
+      Animated.timing(bounceAnim, {
+        toValue: 10,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bounceAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]);
+
+    // Start both animations in loops
+    Animated.parallel([
+      Animated.loop(pulseSequence),
+      Animated.loop(bounceSequence),
+    ]).start();
+
+    return () => {
+      pulseAnim.setValue(1);
+      bounceAnim.setValue(0);
+    };
+  }, []);
 
   useEffect(() => {
-    const futureDate = new Date(Date.now() + 3600000); // 1 hour from now for testing
+    const futureDate = new Date(Date.now() + 3600000);
     const interval = setInterval(() => {
       const now = Date.now();
       const duration = intervalToDuration({ start: now, end: futureDate });
 
-      // Ensure all properties are defined
       const hours = duration.hours || 0;
       const minutes = duration.minutes || 0;
       const seconds = duration.seconds || 0;
 
-      const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      const formattedCountdown = `${String(hours).padStart(2, '0')}:${String(
+        minutes
+      ).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
       setCountdown(formattedCountdown);
-
-      // Ripple effect animation
-      Animated.loop(
-        Animated.timing(ripplePosition, {
-          toValue: width,
-          duration: 3000,
-          useNativeDriver: false,
-        })
-      ).start();
     }, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -83,7 +119,7 @@ const EventScreen = () => {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }
         )}
-        snapToOffsets={[0, height]} // Snaps between sections
+        snapToOffsets={[0, height]}
         snapToAlignment="start"
         decelerationRate="fast"
         scrollEventThrottle={16}
@@ -96,12 +132,26 @@ const EventScreen = () => {
                 style={[
                   styles.countdownContainer,
                   {
-                    transform: [{ translateX: ripplePosition }],
+                    transform: [{ scale: pulseAnim }],
                   },
                 ]}
               >
                 <Text style={styles.countdown}>{countdown}</Text>
               </Animated.View>
+              
+              {/* Scroll indicator */}
+              <View style={styles.scrollIndicatorContainer}>
+                <Animated.View
+                  style={[
+                    styles.scrollIndicator,
+                    {
+                      transform: [{ translateY: bounceAnim }],
+                    },
+                  ]}
+                >
+                  <MoveDown size={32} color="#333" />
+                </Animated.View>
+              </View>
             </View>
           ) : (
             <View style={styles.otherEventsContainer} className="mt-[-10rem]">
@@ -192,13 +242,19 @@ const EventScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   upcomingSection: {
     height,
     alignItems: "center",
   },
-  upcomingTitle: { fontSize: 28, fontWeight: "bold", color: "#333" },
+  upcomingTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#333",
+  },
   countdownContainer: {
     width: 200,
     height: 50,
@@ -213,7 +269,16 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#e63946",
   },
-
+  scrollIndicatorContainer: {
+    position: "absolute",
+    bottom: 100, // Adjusted to be higher up from the bottom
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  scrollIndicator: {
+    alignSelf: "center",
+  },
   otherEventsContainer: {
     height,
     paddingHorizontal: 20,
@@ -227,8 +292,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ddd",
     paddingBottom: 10,
   },
-  otherEventsTitle: { fontSize: 22, fontWeight: "bold", color: "#333" },
-
+  otherEventsTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#333",
+  },
   addButton: {
     backgroundColor: "#007AFF",
     padding: 12,
@@ -236,17 +304,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   eventCard: {
     padding: 15,
     backgroundColor: "#f0f0f0",
     marginBottom: 10,
     borderRadius: 10,
   },
-  eventTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
-  eventDescription: { color: "gray" },
-  noEvents: { textAlign: "center", padding: 20, fontSize: 16, color: "#888" },
-
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  eventDescription: {
+    color: "gray",
+  },
+  noEvents: {
+    textAlign: "center",
+    padding: 20,
+    fontSize: 16,
+    color: "#888",
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -265,10 +342,21 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-  modalTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 10 },
-  modalDescription: { fontSize: 16, textAlign: "center", marginBottom: 20 },
-  closeButton: { position: "absolute", top: 10, right: 10 },
-
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalDescription: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+  },
   input: {
     width: "100%",
     borderBottomWidth: 1,
