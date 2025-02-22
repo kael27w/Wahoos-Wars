@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import * as Location from "expo-location"
 import {
   View,
   Text,
@@ -8,12 +9,15 @@ import {
   Dimensions,
   Animated,
   Easing,
+  Alert
 } from "react-native";
 import MapView, { Marker, Circle } from "react-native-maps";
 import { intervalToDuration } from "date-fns";
 import { Plus, MoveDown } from "lucide-react-native";
 
 const { height, width } = Dimensions.get("window");
+
+import { Modal } from "react-native";
 
 export type app_event = {
   title: string;
@@ -47,6 +51,50 @@ const EventScreen = () => {
   const [scaleAnim] = useState(new Animated.Value(1));
   const [arrowAnim] = useState(new Animated.Value(0));
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  const [canCheckIn, setCanCheckIn] = useState(false);
+
+  // Haversine formula to calculate distance between two lat/lon points
+  const getDistance = (lat1: number | undefined, lon1: number | undefined, lat2: number | undefined, lon2: number | undefined) => {
+	if (!lat1 || !lon1 || !lat2 || !lon2) return 1000 //arbitrarily large value
+    const R = 6371e3; // Earth's radius in meters
+    const toRad = (angle: number) => (angle * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in meters
+  };
+
+  //check to see if user can check in whenever location updates, too intensive to recalculate on every update though
+//   useEffect(() => {
+//     if (userLocation && events.length > 0) {
+//       const distance = getDistance(
+//         userLocation.latitude,
+//         userLocation.longitude,
+//         events[0].latitude,
+//         events[0].longitude
+//       );
+//       setCanCheckIn(distance <= 20); // Allow check-in only if within 20 meters
+//     }
+//   }, [userLocation, events]);
+
+  const handleCheckIn = () => {
+    if (getDistance(userLocation?.latitude, userLocation?.longitude, events[0].latitude, events[0].longitude) > 20) {
+      Alert.alert("Too far!", "You must be within 20 meters of the event to check in.");
+      return;
+    }
+    setModalVisible(true);
+  };
+
+  //countdown logic
   useEffect(() => {
 	if (events.length === 1) return;
   
@@ -74,6 +122,22 @@ const EventScreen = () => {
   
 	return () => clearInterval(interval);
   }, [events]);  
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    })();
+  }, []);
   
 
   // Subtle countdown animation
@@ -96,29 +160,6 @@ const EventScreen = () => {
     };
     animateCountdown();
   }, []);
-
-  // Subtle bounce effect for arrow
-//   useEffect(() => {
-//     const animateArrow = () => {
-//       Animated.loop(
-//         Animated.sequence([
-//           Animated.timing(arrowAnim, {
-//             toValue: 5,
-//             duration: 800,
-//             easing: Easing.inOut(Easing.ease),
-//             useNativeDriver: true,
-//           }),
-//           Animated.timing(arrowAnim, {
-//             toValue: 0,
-//             duration: 800,
-//             easing: Easing.inOut(Easing.ease),
-//             useNativeDriver: true,
-//           }),
-//         ])
-//       ).start();
-//     };
-//     animateArrow();
-//   }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -148,6 +189,7 @@ const EventScreen = () => {
 
               {/* Map Section Below Countdown */}
               {events.length > 1 && (
+				<>
                 <View className="w-[95%] h-64 mt-[2rem] rounded-lg overflow-hidden">
                   <MapView
                     style={{ width: "100%", height: "100%" }}
@@ -194,12 +236,47 @@ const EventScreen = () => {
                       strokeColor="rgba(255, 0, 0, 0.5)"
                       fillColor="rgba(255, 0, 0, 0.2)"
                     />
+
+
+					{userLocation && ( //user's current location
+                        <Marker
+                          coordinate={userLocation}
+                          title="Your Location"
+                          pinColor="blue"
+                        />
+                      )}
                   </MapView>
                 </View>
+				{/* Check-in Button */}
+				<TouchableOpacity
+					className="flex bg-blue-500 rounded-lg items-center justify-center mt-4"
+					onPress={handleCheckIn}
+					>
+					<Text className="text-white text-center text-lg font-bold p-4">
+						Check in to current event:{"\n"}{events[0].title}
+					</Text>
+				</TouchableOpacity>
+
+				{/* Placeholder Modal */}
+				<Modal visible={modalVisible} transparent animationType="slide">
+					<View className="flex-1 justify-center items-center bg-black bg-opacity-50">
+						<View className="bg-white p-6 rounded-lg w-80 items-center">
+						<Text className="text-lg font-bold mb-4">Check-in</Text>
+						<Text>You have checked into {events[0].title}!</Text>
+						<TouchableOpacity
+							className="mt-4 bg-blue-500 px-4 py-2 rounded-full"
+							onPress={() => setModalVisible(false)}
+						>
+							<Text className="text-white font-bold">OK</Text>
+						</TouchableOpacity>
+						</View>
+					</View>
+				</Modal>
+				</>
               )}
 
               {/* Scroll indicator with animation */}
-              <View className="absolute bottom-[15rem] left-0 right-0 items-center">
+              <View className="absolute bottom-[11rem] left-0 right-0 items-center">
                 <Animated.View className="flex items-center" style={{ transform: [{ translateY: arrowAnim }] }}>
 					<Text className="text-2xl mb-1 font-bold text-gray-800">Or other events</Text>
                   <MoveDown size={32} color="black" />
