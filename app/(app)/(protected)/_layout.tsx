@@ -4,6 +4,8 @@ import React from "react";
 import { colors } from "@/constants/colors";
 import { useColorScheme } from "@/lib/useColorScheme";
 
+import { Home, Settings } from "lucide-react-native"
+
 export default function ProtectedLayout() {
 	const { colorScheme } = useColorScheme();
 
@@ -24,8 +26,12 @@ export default function ProtectedLayout() {
 				tabBarShowLabel: false,
 			}}
 		>
-			<Tabs.Screen name="index" options={{ title: "Home" }} />
-			<Tabs.Screen name="settings" options={{ title: "Settings" }} />
+			<Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color, size }) => (
+						<Home color={color} size={size} />
+					) }} />
+			<Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: ({ color, size }) => (
+						<Settings color={color} size={size} />
+					) }} />
 		</Tabs>
 	);
 }
