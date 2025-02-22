@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Button, Animated } from "react-native";
+import {
+  View, Text, FlatList, TouchableOpacity, Modal, TextInput, Button,
+  Animated, SafeAreaView, Dimensions, StyleSheet, ScrollView
+} from "react-native";
 import { formatDistanceToNow } from "date-fns";
 import { Plus, X } from "lucide-react-native";
-import { create } from "zustand";
 
-// State management using Zustand
-interface EventStore {
-  events: app_event[];
-  addEvent: (event: app_event) => void;
-}
-
-const useEventStore = create<EventStore>((set) => ({
-  events: [],
-  addEvent: (event) => set((state) => ({ events: [...state.events, event] })),
-}));
+const { height, width } = Dimensions.get("window"); // Get screen dimensions
 
 export type app_event = {
   title: string;
@@ -23,15 +16,15 @@ export type app_event = {
 };
 
 const EventScreen = () => {
-  const { events, addEvent } = useEventStore();
+  const [events, setEvents] = useState<app_event[]>([]);
   const [countdown, setCountdown] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [addEventModal, setAddEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<app_event | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
-  const [scrollY] = useState(new Animated.Value(0));
+  const scrollY = new Animated.Value(0);
 
-  // Countdown logic (random event reveal)
   useEffect(() => {
     const futureDate = new Date(Date.now() + Math.random() * 86400000);
     const interval = setInterval(() => {
@@ -42,68 +35,156 @@ const EventScreen = () => {
 
   const handleAddEvent = () => {
     if (newTitle && newDescription) {
-      addEvent({ title: newTitle, description: newDescription, time: "", location: "" });
+      setEvents([...events, { title: newTitle, description: newDescription, time: "", location: "" }]);
       setNewTitle("");
       setNewDescription("");
+      setAddEventModal(false);
     }
   };
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      {/* Top Section: Countdown */}
-      <View style={{ alignItems: "center", marginBottom: 20 }}>
-        <Text style={{ fontSize: 24, fontWeight: "bold" }}>Upcoming Events</Text>
-        <Text style={{ fontSize: 18, color: "gray" }}>Next reveal {countdown}</Text>
-      </View>
-      
-      {/* Bottom Section: Other Events */}
+    <SafeAreaView style={styles.container}>
       <Animated.ScrollView
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
-        style={{ flex: 1 }}
+        scrollEventThrottle={16}
+        snapToOffsets={[0, height * 0.9]} // Snaps to Upcoming Events
+        decelerationRate="fast"
       >
-        <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>Other Events</Text>
+        {/* Upcoming Events Section */}
+        <View style={styles.upcomingSection}>
+          <Text style={styles.upcomingTitle}>Upcoming Events</Text>
+          <Text style={styles.countdown}>{countdown}</Text>
+        </View>
+
+        {/* Other Events Section */}
+        <View style={styles.otherEventsContainer}>
+          <Text style={styles.otherEventsTitle}>Other Events</Text>
+
+          {/* Add Event Button Beside Header */}
+          <TouchableOpacity style={styles.addButton} onPress={() => setAddEventModal(true)}>
+            <Plus color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* List of Events */}
         <FlatList
           data={events}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={{ padding: 15, backgroundColor: "#f0f0f0", marginBottom: 10, borderRadius: 10 }}
-              onPress={() => { setSelectedEvent(item); setModalVisible(true); }}
-            >
-              <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.title}</Text>
-              <Text numberOfLines={1} style={{ color: "gray" }}>{item.description}</Text>
+            <TouchableOpacity style={styles.eventCard} onPress={() => { setSelectedEvent(item); setModalVisible(true); }}>
+              <Text style={styles.eventTitle}>{item.title}</Text>
+              <Text numberOfLines={1} style={styles.eventDescription}>{item.description}</Text>
             </TouchableOpacity>
           )}
+          ListEmptyComponent={<Text style={styles.noEvents}>No events yet. Add one!</Text>}
         />
       </Animated.ScrollView>
-      
-      {/* Add Event Button */}
-      <TouchableOpacity
-        style={{ position: "absolute", bottom: 20, right: 20, backgroundColor: "blue", padding: 15, borderRadius: 30 }}
-        onPress={handleAddEvent}
-      >
-        <Plus/>
-      </TouchableOpacity>
-      
-      {/* Event Modal */}
-      <Modal visible={modalVisible} animationType="slide">
-        <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
-          <TouchableOpacity onPress={() => setModalVisible(false)}>
-            <X size={30}/>
-          </TouchableOpacity>
-          <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 10 }}>{selectedEvent?.title}</Text>
-          <Text style={{ fontSize: 18 }}>{selectedEvent?.description}</Text>
+
+      {/* Event Details Modal */}
+      <Modal visible={modalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              <X size={28} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>{selectedEvent?.title}</Text>
+            <Text style={styles.modalDescription}>{selectedEvent?.description}</Text>
+          </View>
         </View>
       </Modal>
-      
-      {/* Add Event Input Fields */}
-      <View style={{ position: "absolute", bottom: 80, left: 20, right: 20, backgroundColor: "white", padding: 15, borderRadius: 10 }}>
-        <TextInput placeholder="Event Title" value={newTitle} onChangeText={setNewTitle} style={{ borderBottomWidth: 1, marginBottom: 10 }} />
-        <TextInput placeholder="Event Description" value={newDescription} onChangeText={setNewDescription} style={{ borderBottomWidth: 1, marginBottom: 10 }} />
-        <Button title="Add Event" onPress={handleAddEvent} />
-      </View>
-    </View>
+
+      {/* Add Event Modal */}
+      <Modal visible={addEventModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity onPress={() => setAddEventModal(false)} style={styles.closeButton}>
+              <X size={28} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Add New Event</Text>
+            <TextInput placeholder="Event Title" value={newTitle} onChangeText={setNewTitle} style={styles.input} />
+            <TextInput placeholder="Event Description" value={newDescription} onChangeText={setNewDescription} style={styles.input} multiline />
+            <Button title="Add Event" onPress={handleAddEvent} />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+
+  upcomingSection: {
+    height: height * 0.9,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingBottom: height * 0.1,
+    backgroundColor: "#f8f8f8",
+  },
+  upcomingTitle: { fontSize: 28, fontWeight: "bold", color: "#333" },
+  countdown: { fontSize: 40, fontWeight: "900", color: "#e63946", marginTop: 10 },
+
+  otherEventsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    backgroundColor: "#fff",
+  },
+  otherEventsTitle: { fontSize: 22, fontWeight: "bold", color: "#333" },
+
+  addButton: {
+    backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  eventCard: {
+    padding: 15,
+    backgroundColor: "#f0f0f0",
+    marginBottom: 10,
+    borderRadius: 10,
+    marginHorizontal: 20,
+  },
+  eventTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
+  eventDescription: { color: "gray" },
+  noEvents: { textAlign: "center", padding: 20, fontSize: 16, color: "#888" },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "90%",
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalTitle: { fontSize: 22, fontWeight: "bold", marginBottom: 10 },
+  modalDescription: { fontSize: 16, textAlign: "center", marginBottom: 20 },
+  closeButton: { position: "absolute", top: 10, right: 10 },
+
+  input: {
+    width: "100%",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    marginBottom: 15,
+    paddingVertical: 8,
+    fontSize: 16,
+  },
+});
 
 export default EventScreen;
