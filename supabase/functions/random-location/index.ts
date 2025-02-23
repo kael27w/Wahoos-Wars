@@ -1,55 +1,7 @@
-// Import directly from the URL
+// supabase/functions/random-location/index.ts
+// supabase/functions/random-location/index.ts
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0"
-import { getCampusLocations } from "../../constants/campus_locations.ts"
-
-// interface Location {
-//   coordinates: {
-//     latitude: number;
-//     longitude: number;
-//   };
-//   radius: number;
-// }
-
-// const CAMPUS_LOCATIONS = {
-//   "Library": {
-//     "locations": {
-//       "Shannon": {
-//         "coordinates": {
-//           "latitude": 37.7249,
-//           "longitude": -122.4194
-//         },
-//         "radius": 15
-//       },
-//       "Clem": {
-//         "coordinates": {
-//           "latitude": 37.7248,
-//           "longitude": -122.4192
-//         },
-//         "radius": 20
-//       }
-//     }
-//   },
-//   "Gym": {
-//     "locations": {
-//       "North Grounds": {
-//         "coordinates": {
-//           "latitude": 37.7244,
-//           "longitude": -122.4188
-//         },
-//         "radius": 35
-//       },
-//       "AFC": {
-//         "coordinates": {
-//           "latitude": 37.7243,
-//           "longitude": -122.4187
-//         },
-//         "radius": 30
-//       }
-//     }
-//   }
-// };
-
-// Initialize Supabase client
+import { getCampusLocations } from "./campus_locations.ts"  // Updated import path
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -59,6 +11,7 @@ console.log("Random Location Function Started!");
 Deno.serve(async (req) => {
   try {
     const CAMPUS_LOCATIONS = await getCampusLocations();
+    
     // Get random category
     const categories = Object.keys(CAMPUS_LOCATIONS);
     const randomCategory = categories[Math.floor(Math.random() * categories.length)];
@@ -69,15 +22,12 @@ Deno.serve(async (req) => {
     const randomLocationName = locationNames[Math.floor(Math.random() * locationNames.length)];
     const selectedLocation = locations[randomLocationName];
 
-    // Format location data
+    // Format location data - fixed to properly extract coordinates
     const locationData = {
       category: randomCategory,
       name: `${randomLocationName} ${randomCategory}`,
-      coordinates: {
-        latitude, 
-        longitude
-      }, 
-      radius,
+      coordinates: selectedLocation.coordinates,
+      radius: selectedLocation.radius,
       created_at: new Date().toISOString()
     };
 
@@ -107,27 +57,13 @@ Deno.serve(async (req) => {
         message: 'Location updated successfully',
         data: insertedLocation
       }),
-      { 
-        headers: { 
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        } 
-      }
+      { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
     );
   } catch (error) {
     console.error('Error in random location function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: 'Failed to update location in database'
-      }),
-      { 
-        status: 500,
-        headers: { 
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        } 
-      }
+      JSON.stringify({ error: error.message, details: 'Failed to update location in database' }),
+      { status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
     );
   }
 });
