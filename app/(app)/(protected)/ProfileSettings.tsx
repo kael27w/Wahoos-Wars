@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 16,
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
   input: {
     borderWidth: 1,
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     padding: 12,
     marginBottom: 12,
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
   statisticsContainer: {
     marginTop: 20,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
   statisticItem: {
     flexDirection: "row",
@@ -130,16 +130,16 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   statisticText: {
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
   statisticValue: {
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
   recentActivityTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginVertical: 10,
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
   activityItem: {
     flexDirection: "row",
@@ -149,9 +149,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ccc",
   },
   activityText: {
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
   activityScore: {
-    fontFamily: "Orbitron", // Added Orbitron font
+    // fontFamily: "Orbitron", // Added Orbitron font
   },
 });

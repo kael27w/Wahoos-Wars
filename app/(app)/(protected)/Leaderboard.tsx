@@ -135,19 +135,19 @@ const styles = StyleSheet.create({
   header: {
     textAlign: "center",
     color: "#000000",
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
   },
   subHeader: {
     textAlign: "center",
     marginBottom: 10,
     color: "#000000",
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
   },
   dropdown: {
     marginBottom: 12,
   },
   dropdownText: {
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
   },
   userInfoBox: {
     padding: 10,
@@ -159,16 +159,16 @@ const styles = StyleSheet.create({
   userRank: {
     fontSize: 20,
     fontWeight: "bold",
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
   },
   userName: {
     fontSize: 20,
     fontWeight: "bold",
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
   },
   userScore: {
     fontSize: 16,
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
   },
   listItem: {
     paddingVertical: 10,
@@ -180,13 +180,13 @@ const styles = StyleSheet.create({
   rank: {
     width: 50, 
     fontSize: 18,
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
     textAlign: "left",
   },
   nameColumn: {
     flex: 1, 
     fontSize: 18,
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
     color: "#000000",
   },
   score: {
@@ -201,10 +201,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: 10,
     color: "#000000",
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
   },
   badgeText: {
-    fontFamily: "Orbitron",
+    // fontFamily: "Orbitron",
     fontSize: 16,
     color: "#000000",
   },
