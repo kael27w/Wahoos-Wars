@@ -19,7 +19,8 @@ import { Plus, MoveDown, Info } from "lucide-react-native";
 
 const { height, width } = Dimensions.get("window");
 
-import { Modal } from "react-native";
+import { supabase } from "@/config/supabase";
+import { Tables } from "@/components/primitives/label/supabase_types";
 
 export type app_event = {
   title: string;
@@ -31,24 +32,67 @@ export type app_event = {
   radius?: number;
 };
 
+type EventWithQuestions = Tables<'current_location'> & {
+  event_questions: Tables<"event_questions"> | null;
+};
+type Coordinates = { latitude: number; longitude: number };
+
 const EventScreen = () => {
-  const [events, setEvents] = useState<app_event[]>([
+  const [events, setEvents] = useState<EventWithQuestions[]>([
     {
-      title: "Trivia tournament @ Newcomb",
-      description: "Trivia!",
-      time: "2025-02-18 18:00",
-      location: "Newcomb",
-      latitude: 38.03567,
-      longitude: -78.50684,
+      name: "Trivia tournament @ Newcomb",
+      event_questions: {
+        description: "Trivia!",
+        category: "trivia",
+        correct_answer: "lkajsdf",
+        created_at: "lkajsd",
+        id: 1,
+        name: "asdf",
+        points: 150,
+        question: "kajsdlkf",
+        time_limit: 60,
+        type: "jksaldf",
+        wrong_answers: ["kjalskdf"],
+      },
+      time_of_event: "2025-02-18 18:00",
+      coordinates: {
+        latitude: 38.03567,
+        longitude: -78.50684
+      },
+      category: "kjalksdjf",
+      created_at: "sjlkdfj",
+      event_id: 1,
+      event_status:"in progress",
+      id:"1",
+      radius:20
     },
-	{
-		title: "???",
-		description: "",
-		time: "2025-02-25 18:00",
-		location: "Rotunda",
-		latitude: 38.03526,
-		longitude: -78.50364,
-	  },
+    {
+      name: "another event.....",
+      event_questions: {
+        description: "Trivia!",
+        category: "trivia",
+        correct_answer: "lkajsdf",
+        created_at: "lkajsd",
+        id: 1,
+        name: "asdf",
+        points: 150,
+        question: "kajsdlkf",
+        time_limit: 60,
+        type: "jksaldf",
+        wrong_answers: ["kjalskdf"],
+      },
+      time_of_event: "2025-02-23 18:04:36+00",
+      coordinates: {
+        latitude: 38.03567,
+        longitude: -78.50684
+      },
+      category: "kjalksdjf",
+      created_at: "sjlkdfj",
+      event_id: 1,
+      event_status:"in progress",
+      id:"1",
+      radius:20
+    },
   ]);
   const [countdown, setCountdown] = useState("00:00:00");
   const [scaleAnim] = useState(new Animated.Value(1));
@@ -90,34 +134,63 @@ const EventScreen = () => {
     }
   };
 
+  // update events periodically
+  
+  useEffect(() => {
+    const fetchEvents = async (): Promise<EventWithQuestions[]> => {
+      const { data, error } = await supabase
+        .from('current_location')
+        .select(`
+          *,
+          event_questions: event_id (*)
+        `);
+    
+      if (error) {
+        console.error('Error fetching events:', error);
+        return [];
+      }
+
+      setEvents(data as EventWithQuestions[])
+    
+      return data as EventWithQuestions[];
+    };
+
+    //update events every 10 seconds
+    console.log("fetching events")
+    fetchEvents();
+    const interval = setInterval(fetchEvents, 5000);
+
+    return () => clearInterval(interval)
+  }, [])
+
   //countdown logic
   useEffect(() => {
-	if (events.length === 1) return;
-  
-	const eventTime = new Date(events[1].time).getTime(); // Convert event time to timestamp
-  
-	const updateCountdown = () => {
-	  const now = Date.now();
-	  const timeDiff = eventTime - now; // Difference in milliseconds
-  
-	  if (timeDiff <= 0) {
-		setCountdown("00d 00:00:00"); // If event time has passed
-		return;
-	  }
-  
-	  const duration = intervalToDuration({ start: now, end: eventTime });
-  
-	  const formattedCountdown = `${String(duration.days || 0).padStart(2, "0")}d ${String(duration.hours || 0).padStart(2, "0")}:${String(duration.minutes || 0).padStart(2, "0")}:${String(duration.seconds || 0).padStart(2, "0")}`;
-  
-	  setCountdown(formattedCountdown);
-	};
-  
-	// Run immediately, then every second
-	updateCountdown();
-	const interval = setInterval(updateCountdown, 1000);
-  
-	return () => clearInterval(interval);
-  }, [events]);  
+    if (events.length === 1) return;
+    
+    const eventTime = new Date(events[1].time_of_event || "2025-02-25 18:04:36+00").getTime(); // Convert event time to timestamp
+    
+    const updateCountdown = () => {
+      const now = Date.now();
+      const timeDiff = eventTime - now; // Difference in milliseconds
+    
+      if (timeDiff <= 0) {
+      setCountdown("00d 00:00:00"); // If event time has passed
+      return;
+      }
+    
+      const duration = intervalToDuration({ start: now, end: eventTime });
+    
+      const formattedCountdown = `${String(duration.days || 0).padStart(2, "0")}d ${String(duration.hours || 0).padStart(2, "0")}:${String(duration.minutes || 0).padStart(2, "0")}:${String(duration.seconds || 0).padStart(2, "0")}`;
+    
+      setCountdown(formattedCountdown);
+    };
+    
+    // Run immediately, then every second
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(interval);
+  }, [events]);
 
   useEffect(() => {
     (async () => {
@@ -201,24 +274,24 @@ const EventScreen = () => {
                   <MapView
                     style={{ width: "100%", height: "100%" }}
                     initialRegion={{
-                      latitude: events[1].latitude,
-                      longitude: events[1].longitude,
+                      latitude: (events[1]?.coordinates as Coordinates)?.latitude || 0,
+                      longitude: (events[1]?.coordinates as Coordinates)?.longitude || 0,
                       latitudeDelta: 0.003,
                       longitudeDelta: 0.003,
                     }}
                   >
 					<Marker
                       coordinate={{ // for current event
-                        latitude: events[0].latitude,
-                        longitude: events[0].longitude,
+                        latitude: (events[0].coordinates as Coordinates).latitude || 0,
+                        longitude: (events[0].coordinates as Coordinates).longitude || 0,
                       }}
-                      title={events[0].title}
-                      description={events[0].description}
+                      title={events[0].name}
+                      description={events[0].event_questions?.description}
                     />
                     <Circle
                       center={{
-                        latitude: events[0].latitude,
-                        longitude: events[0].longitude,
+                        latitude: (events[0].coordinates as Coordinates).latitude || 0,
+                        longitude: (events[0].coordinates as Coordinates).longitude || 0,
                       }}
                       radius={40}
                       strokeColor="rgba(112, 116, 255, 0.5)"
@@ -228,17 +301,14 @@ const EventScreen = () => {
 					
                     <Marker
                       coordinate={{ // for upcoming event
-                        latitude: events[1].latitude,
-                        longitude: events[1].longitude,
+                        latitude: (events[1].coordinates as Coordinates).latitude || 0,
+                        longitude: (events[1].coordinates as Coordinates).longitude || 0,
                       }}
-                      title={events[1].title}
-                      description={events[1].description}
+                      title={events[1].name}
+                      description={events[1].event_questions?.description}
                     />
                     <Circle
-                      center={{
-                        latitude: events[1].latitude,
-                        longitude: events[1].longitude,
-                      }}
+                      center={events[1].coordinates as Coordinates}
                       radius={40} // 500 meters radius
                       strokeColor="rgba(255, 0, 0, 0.5)"
                       fillColor="rgba(255, 0, 0, 0.2)"
@@ -249,18 +319,12 @@ const EventScreen = () => {
                         return (
                           <>
                           <Marker
-                            coordinate={{
-                              latitude: event.latitude,
-                              longitude: event.longitude
-                            }}
-                            title={event.title}
-                            description={event.description}
+                            coordinate={event.coordinates as Coordinates}
+                            title={event.name}
+                            description={event.event_questions?.description}
                           />
                           <Circle
-                            center={{
-                              latitude: event.latitude,
-                              longitude: event.longitude
-                            }}
+                            center={event.coordinates as Coordinates}
                             radius={event.radius || 20}
                             strokeColor="rgba(31, 189, 0, 0.5)"
                             fillColor="rgba(31,189,0,0.2)"
@@ -288,10 +352,10 @@ const EventScreen = () => {
               {!completedTrivia ? (
                 <>
                   Check in to current event: {"\n"}
-                  <Text className="text-yellow-300">{events[0].title}</Text>
+                  <Text className="text-yellow-300">{events[0].event_questions?.name}</Text>
                 </>
               ) : (
-                <Text className="text-black">You've already checked in to {events[0].title}!</Text>
+                <Text className="text-black">You've already checked in to {events[0].event_questions?.name}!</Text>
               )}
             </Text>
 
@@ -327,13 +391,13 @@ const EventScreen = () => {
                 renderItem={({ item }) => (
                   <TouchableOpacity className={`p-4 bg-gray-200 mb-2 rounded-lg mt-5`}>
                     <Text className="text-lg font-bold text-gray-800">
-                      {item.title}
+                      {item.event_questions?.question}
                     </Text>
                     <Text className="text-gray-500" numberOfLines={1}>
-                      {item.description}
+                      {item.event_questions?.description}
                     </Text>
 					<Text numberOfLines={1}>
-						{new Date(item.time).toLocaleString()}
+						{new Date(item.time_of_event || "").toLocaleString()}
 					</Text>
                   </TouchableOpacity>
                 )}
