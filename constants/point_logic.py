@@ -9,18 +9,8 @@ api_key = """eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 # Initializes the Supabase client
 supabase: Client = create_client(url, api_key)
 
-"""Given a user id, return a user's current points."""
-def get_user_points(user_id: str):
-    response = supabase.table('user_profiles').select('points').eq('user_id', user_id).execute()
-    if response.status_code == 200:
-        return response.data[0]['points'] if response.data else None
-    else:
-        print(f"Error fetching points: {response.status_code}")
-        return None
-
 """Update a user's points giver their id and points to be added."""
 def update_user_points(user_id: str, new_points: int):
-    # Update points for a specific user
     response = supabase.table('user_profiles').update({'points': new_points}).eq('user_id', user_id).execute()
     if response.status_code == 200:
         print(f"Points updated for user {user_id} to {new_points}")
