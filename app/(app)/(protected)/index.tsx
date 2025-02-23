@@ -150,7 +150,7 @@ const EventScreen = () => {
         return [];
       }
 
-      // console.log("Stringified events:", JSON.stringify(data, null, 2));
+      console.log("Stringified events:", JSON.stringify(data, null, 2));
       // console.log("coordinates:", ((data[1] as EventWithQuestions).coordinates as Coordinates).latitude)
 
       setEvents(data as EventWithQuestions[])
