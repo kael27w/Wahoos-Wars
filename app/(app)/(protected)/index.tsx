@@ -142,7 +142,7 @@ const EventScreen = () => {
         .from('current_location')
         .select(`
           *,
-          event_questions: event_id (*)
+          event_questions (*)
         `);
     
       if (error) {
@@ -150,14 +150,17 @@ const EventScreen = () => {
         return [];
       }
 
+      // console.log("Stringified events:", JSON.stringify(data, null, 2));
+      // console.log("coordinates:", ((data[1] as EventWithQuestions).coordinates as Coordinates).latitude)
+
       setEvents(data as EventWithQuestions[])
     
       return data as EventWithQuestions[];
     };
 
-    //update events every 10 seconds
-    console.log("fetching events")
+    //update events every 5 seconds
     fetchEvents();
+    console.log("fetched events")
     const interval = setInterval(fetchEvents, 5000);
 
     return () => clearInterval(interval)
@@ -285,7 +288,7 @@ const EventScreen = () => {
                         latitude: (events[0].coordinates as Coordinates).latitude || 0,
                         longitude: (events[0].coordinates as Coordinates).longitude || 0,
                       }}
-                      title={events[0].name}
+                      title={events[0].event_questions?.name}
                       description={events[0].event_questions?.description}
                     />
                     <Circle
@@ -304,11 +307,14 @@ const EventScreen = () => {
                         latitude: (events[1].coordinates as Coordinates).latitude || 0,
                         longitude: (events[1].coordinates as Coordinates).longitude || 0,
                       }}
-                      title={events[1].name}
-                      description={events[1].event_questions?.description}
+                      title="???"
+                      description="Upcoming event..."
                     />
                     <Circle
-                      center={events[1].coordinates as Coordinates}
+                      center={{
+                        latitude: (events[1].coordinates as Coordinates).latitude || 0,
+                        longitude: (events[1].coordinates as Coordinates).longitude || 0,
+                      }}
                       radius={40} // 500 meters radius
                       strokeColor="rgba(255, 0, 0, 0.5)"
                       fillColor="rgba(255, 0, 0, 0.2)"
@@ -362,7 +368,7 @@ const EventScreen = () => {
 				</TouchableOpacity>
 
 				{/* Trivia Modal if Trivia */}
-        <TriviaModal modalVisible={triviaModalVisible} setModalVisible={setTriviaModalVisible}/>
+        <TriviaModal modalVisible={triviaModalVisible} setModalVisible={setTriviaModalVisible} eventData={events[0]}/>
 				</>
         )}
 
