@@ -1,32 +1,58 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-console.log("Hello from Functions!")
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
+});
 
 Deno.serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
+  if (req.method !== "POST") {
+    return new Response("Only POST requests allowed", { status: 405 });
   }
 
-  return new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
-  )
-})
+  try {
+    const { user_id, points } = await req.json();
 
-/* To invoke locally:
+    if (!user_id || points === undefined || isNaN(points)) {
+      return new Response("user_id and points (as a number) are required", { status: 400 });
+    }
 
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
+    const { data, error: fetchError } = await supabase
+      .from("users") // Make sure this table name is correct
+      .select("points")
+      .eq("id", user_id)
+      .single();
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/point-system' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
+    if (fetchError) {
+      console.error("Error fetching user:", fetchError);
+      return new Response(JSON.stringify({ error: fetchError.message }), { status: 500 });
+    }
 
-*/
+    if (!data) {
+      return new Response("User not found", { status: 404 });
+    }
+
+    const newPoints = (data.points || 0) + points;
+
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ points: newPoints })
+      .eq("id", user_id);
+
+    if (updateError) {
+      console.error("Error updating points:", updateError);
+      return new Response(JSON.stringify({ error: updateError.message }), { status: 500 });
+    }
+
+    return new Response(JSON.stringify({ message: "Points updated successfully", newPoints }), {
+      headers: { "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return new Response(JSON.stringify({ error: "An unexpected error occurred" }), { status: 500 });
+  }
+});

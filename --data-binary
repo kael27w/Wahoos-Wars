@@ -1,0 +1,11 @@
+HTTP/1.1 500 Internal Server Error
+Content-Type: text/plain;charset=UTF-8
+Content-Length: 40
+Connection: keep-alive
+vary: Accept-Encoding
+date: Sun, 23 Feb 2025 18:05:13 GMT
+X-Kong-Upstream-Latency: 43
+X-Kong-Proxy-Latency: 0
+Via: kong/2.8.1
+
+{"error":"Unexpected end of JSON input"}
