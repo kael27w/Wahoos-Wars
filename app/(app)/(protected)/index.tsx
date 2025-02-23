@@ -20,7 +20,7 @@ import { Plus, MoveDown, Info } from "lucide-react-native";
 const { height, width } = Dimensions.get("window");
 
 import { supabase } from "@/config/supabase";
-import { Tables } from "@/components/primitives/label/supabase_types";
+import { Tables } from "@/components/primitives/supabase_types";
 
 export type app_event = {
   title: string;
