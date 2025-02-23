@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, FlatList, ScrollView, StyleSheet } from "react-native";
+import { View, Text, FlatList, ScrollView, StyleSheet, SafeAreaView } from "react-native";
 import { H1, Muted } from "@/components/ui/typography";
 import { SelectList } from "react-native-dropdown-select-list"; 
 import { useNavigation } from "expo-router";
 
 // Sample Badge Data
 const badgeData = [
-  { playerName: "Player 1", badge: "Gold Math", earned: true },
-  { playerName: "Player 2", badge: "Silver History", earned: true },
-  { playerName: "Player 3", badge: "Bronze General Knowledge", earned: true },
+  { playerName: "Rolando", badge: "Gold Math", earned: true },
+  { playerName: "Manny", badge: "Silver History", earned: true },
+  { playerName: "Connor", badge: "Bronze General Knowledge", earned: true },
 ];
 
 // Sample User Data
@@ -19,26 +19,10 @@ const userData = {
 
 // Fixed player data with names and scores (can be dynamic from a database)
 const playerData = [
-  { name: "Player 1", score: 120 },
-  { name: "Player 2", score: 150 },
-  { name: "Player 3", score: 90 },
-  { name: "Player 4", score: 0 },
-  { name: "Player 5", score: 0 },
-  { name: "Player 6", score: 0 },
-  { name: "Player 7", score: 0 },
-  { name: "Player 8", score: 0 },
-  { name: "Player 9", score: 0 },
-  { name: "Player 10", score: 0 },
-  { name: "Player 11", score: 0 },
-  { name: "Player 12", score: 0 },
-  { name: "Player 13", score: 0 },
-  { name: "Player 14", score: 0 },
-  { name: "Player 15", score: 0 },
-  { name: "Player 16", score: 0 },
-  { name: "Player 17", score: 0 },
-  { name: "Player 18", score: 0 },
-  { name: "Player 19", score: 0 },
-  { name: "Player 20", score: 0 },
+  { name: "Connor", score: 120 },
+  { name: "Manny", score: 150 },
+  { name: "Ryan", score: 90 },
+  { name: "Rolando", score: 0 },
 ];
 
 const leaderboardTypes = [
@@ -80,6 +64,7 @@ export default function Leaderboard() {
   const userRankPlayer = leaderboardData[userRank - 1]?.name || userData.playerName;
 
   return (
+    <SafeAreaView className="min-h-full">
     <ScrollView style={styles.container}>
       <H1 style={styles.header}>🏆 Leaderboard</H1>
       <Muted style={styles.subHeader}>Here are the top scores:</Muted>
@@ -136,6 +121,7 @@ export default function Leaderboard() {
         )}
       />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

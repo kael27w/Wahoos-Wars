@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Button, StyleSheet, FlatList } from "react-native";
+import { View, Text, TextInput, Button, StyleSheet, FlatList, SafeAreaView } from "react-native";
 import { useState } from "react";
 
 export default function ProfileSettings() {
@@ -23,6 +23,7 @@ export default function ProfileSettings() {
   };
 
   return (
+    <SafeAreaView className="min-h-full">
     <View style={styles.container}>
       <Text style={styles.title}>Edit Profile</Text>
 
@@ -79,6 +80,7 @@ export default function ProfileSettings() {
         />
       </View>
     </View>
+    </SafeAreaView>
   );
 }
 
