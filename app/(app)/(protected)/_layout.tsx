@@ -7,6 +7,8 @@ import { ActivityIndicator } from "react-native";
 import { colors } from "@/constants/colors";
 import { useColorScheme } from "@/lib/useColorScheme";
 
+import {Home, Settings, User } from "lucide-react-native"
+
 export default function ProtectedLayout() {
     const { colorScheme } = useColorScheme();
 
@@ -38,9 +40,15 @@ export default function ProtectedLayout() {
                 },
             }}
         >
-            <Tabs.Screen name="index" options={{ title: "Home" }} />
-            <Tabs.Screen name="Leaderboard" options={{ title: "Leaderboards" }} />
-            <Tabs.Screen name="ProfileSettings" options={{ title: "Profile" }} />
+            <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color, size }) => (
+				<Home color={color} size={size} />
+			) }} />
+			<Tabs.Screen name="settings" options={{ title: "Settings", tabBarIcon: ({ color, size }) => (
+						<Settings color={color} size={size} />
+					) }} />
+            <Tabs.Screen name="ProfileSettings" options={{ title: "Profile", tabBarIcon: ({ color, size }) => (
+                    <User color={color} size={size}/>
+     ) }} />
         </Tabs>
     );
 }

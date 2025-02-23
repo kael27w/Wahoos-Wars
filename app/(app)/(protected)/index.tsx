@@ -283,7 +283,7 @@ const EventScreen = () => {
                       longitudeDelta: 0.003,
                     }}
                   >
-					<Marker
+					          <Marker
                       coordinate={{ // for current event
                         latitude: (events[0].coordinates as Coordinates).latitude || 0,
                         longitude: (events[0].coordinates as Coordinates).longitude || 0,
