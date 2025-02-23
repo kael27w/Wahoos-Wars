@@ -9,8 +9,10 @@ import {
   Dimensions,
   Animated,
   Easing,
-  Alert
+  Alert,
 } from "react-native";
+import { Image } from "@/components/image";
+import TriviaModal from "@/components/TriviaModal";
 import MapView, { Marker, Circle } from "react-native-maps";
 import { intervalToDuration } from "date-fns";
 import { Plus, MoveDown, Info } from "lucide-react-native";
@@ -26,6 +28,7 @@ export type app_event = {
   location: string;
   latitude: number;
   longitude: number;
+  radius?: number;
 };
 
 const EventScreen = () => {
@@ -51,13 +54,13 @@ const EventScreen = () => {
   const [scaleAnim] = useState(new Animated.Value(1));
   const [arrowAnim] = useState(new Animated.Value(0));
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [triviaModalVisible, setTriviaModalVisible] = useState(false);
+  const [completedTrivia, setCompletedTrivia] = useState(false);
+
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
-
-  const [canCheckIn, setCanCheckIn] = useState(false);
 
   // Haversine formula to calculate distance between two lat/lon points
   const getDistance = (lat1: number | undefined, lon1: number | undefined, lat2: number | undefined, lon2: number | undefined) => {
@@ -73,25 +76,18 @@ const EventScreen = () => {
     return R * c; // Distance in meters
   };
 
-  //check to see if user can check in whenever location updates, too intensive to recalculate on every update though
-//   useEffect(() => {
-//     if (userLocation && events.length > 0) {
-//       const distance = getDistance(
-//         userLocation.latitude,
-//         userLocation.longitude,
-//         events[0].latitude,
-//         events[0].longitude
-//       );
-//       setCanCheckIn(distance <= 20); // Allow check-in only if within 20 meters
-//     }
-//   }, [userLocation, events]);
-
   const handleCheckIn = () => {
-    if (getDistance(userLocation?.latitude, userLocation?.longitude, events[0].latitude, events[0].longitude) > 20) {
-      Alert.alert("Too far!", "You must be within 20 meters of the event to check in.");
-      return;
+    // if (getDistance(userLocation?.latitude, userLocation?.longitude, events[0].latitude, events[0].longitude) > 20) {
+    //   Alert.alert("Too far!", "You must be within 20 meters of the event to check in.");
+    //   return;
+    // }
+    if (!completedTrivia) {
+      setTriviaModalVisible(true);
+      setCompletedTrivia(true);
     }
-    setModalVisible(true);
+    else {
+      Alert.alert("Come back later 😃")
+    }
   };
 
   //countdown logic
@@ -175,18 +171,19 @@ const EventScreen = () => {
           item.key === "upcoming" ? (
             <View className="h-full items-center" style={{ height }}>
               {/* Countdown Section */}
-			  <View className="flex-row items-center justify-center mt-[10rem]">
+              <Image className="h-[11rem] w-[20rem] mt-[3rem]" source={require("@/assets/wwlogo.png")}/>
+			        <View className="flex-row items-center justify-center">
               <Text className="text-2xl font-bold text-gray-800">
                 Upcoming Event ???
               </Text>
-			  <TouchableOpacity
-					onPress={() =>
-					Alert.alert("Upcoming Event", "The next event is revealed soon! Check in to the current one.")
-					}
-					className="ml-1 rounded-full"
-				>
-					<Info size={20} color="black" />
-				</TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                  Alert.alert("Upcoming Event", "The next event is revealed soon! Check in to the current one.")
+                  }
+                  className="ml-1 rounded-full"
+                >
+                  <Info size={20} color="black" />
+                </TouchableOpacity>
 				</View>
               <View className="w-full h-12 bg-white bg-opacity-80 rounded-full items-center justify-center">
                 <Animated.Text
@@ -223,9 +220,9 @@ const EventScreen = () => {
                         latitude: events[0].latitude,
                         longitude: events[0].longitude,
                       }}
-                      radius={20}
+                      radius={40}
                       strokeColor="rgba(112, 116, 255, 0.5)"
-                      fillColor="rgba(0, 119, 255, 0.5)"
+                      fillColor="rgba(0, 119, 255, 0.1)"
                     />
 
 					
@@ -242,13 +239,38 @@ const EventScreen = () => {
                         latitude: events[1].latitude,
                         longitude: events[1].longitude,
                       }}
-                      radius={20} // 500 meters radius
+                      radius={40} // 500 meters radius
                       strokeColor="rgba(255, 0, 0, 0.5)"
                       fillColor="rgba(255, 0, 0, 0.2)"
                     />
 
+                    {events.length > 2 &&
+                      events.slice(1).map((event, index) => {
+                        return (
+                          <>
+                          <Marker
+                            coordinate={{
+                              latitude: event.latitude,
+                              longitude: event.longitude
+                            }}
+                            title={event.title}
+                            description={event.description}
+                          />
+                          <Circle
+                            center={{
+                              latitude: event.latitude,
+                              longitude: event.longitude
+                            }}
+                            radius={event.radius || 20}
+                            strokeColor="rgba(31, 189, 0, 0.5)"
+                            fillColor="rgba(31,189,0,0.2)"
+                          />
+                          </>
+                        )
+                      })}
 
-					{userLocation && ( //user's current location
+
+					            {userLocation && ( //user's current location
                         <Marker
                           coordinate={userLocation}
                           title="Your Location"
@@ -259,36 +281,31 @@ const EventScreen = () => {
                 </View>
 				{/* Check-in Button */}
 				<TouchableOpacity
-					className="flex bg-blue-500 rounded-lg items-center justify-center mt-4"
+					className="flex bg-blue-500/60 w-[95%] rounded-lg items-center justify-center mt-4"
 					onPress={handleCheckIn}
 					>
-					<Text className="text-white text-center text-lg font-bold p-4">
-						Check in to current event:{"\n"}<Text className="text-yellow-300">{events[0].title}</Text>
-					</Text>
+            <Text className="text-white text-center text-lg font-bold p-4">
+              {!completedTrivia ? (
+                <>
+                  Check in to current event: {"\n"}
+                  <Text className="text-yellow-300">{events[0].title}</Text>
+                </>
+              ) : (
+                <Text className="text-black">You've already checked in to {events[0].title}!</Text>
+              )}
+            </Text>
+
 				</TouchableOpacity>
 
-				{/* Placeholder Modal */}
-				<Modal visible={modalVisible} transparent animationType="slide">
-					<View className="flex-1 justify-center items-center bg-black bg-opacity-50">
-						<View className="bg-white p-6 rounded-lg w-80 items-center">
-						<Text className="text-lg font-bold mb-4">Check-in</Text>
-						<Text>You have checked into {events[0].title}!</Text>
-						<TouchableOpacity
-							className="mt-4 bg-blue-500 px-4 py-2 rounded-full"
-							onPress={() => setModalVisible(false)}
-						>
-							<Text className="text-white font-bold">OK</Text>
-						</TouchableOpacity>
-						</View>
-					</View>
-				</Modal>
+				{/* Trivia Modal if Trivia */}
+        <TriviaModal modalVisible={triviaModalVisible} setModalVisible={setTriviaModalVisible}/>
 				</>
-              )}
+        )}
 
               {/* Scroll indicator with animation */}
               <View className="absolute bottom-[11rem] left-0 right-0 items-center">
                 <Animated.View className="flex items-center" style={{ transform: [{ translateY: arrowAnim }] }}>
-					<Text className="text-2xl mb-1 font-bold text-gray-800">Or other events</Text>
+					<Text className="text-2xl mb-1 font-bold text-gray-800">Or all events</Text>
                   <MoveDown size={32} color="black" />
                 </Animated.View>
               </View>
@@ -298,11 +315,11 @@ const EventScreen = () => {
               {/* Other Events Section */}
               <View className="flex-row items-center justify-between border-b border-gray-200 pb-2">
                 <Text className="text-2xl font-bold text-gray-800">
-                  Other Events
+                  All Events
                 </Text>
-                <TouchableOpacity className="bg-blue-500 p-3 rounded-full items-center justify-center">
+                {/* <TouchableOpacity className="bg-blue-500 p-3 rounded-full items-center justify-center">
                   <Plus color="white" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
               <FlatList
                 data={events}
